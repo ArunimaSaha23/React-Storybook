@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState} from 'react';
 import { Meta, StoryObj } from '@storybook/react';
 import { Checkbox } from '../../components/DataEntry/Checkbox';
 import { ThemeProvider } from '../../themes/ThemeProvider';
 import styled from 'styled-components';
+
 
 const meta: Meta<typeof Checkbox> = {
   title: 'Data Entry/Checkbox',
@@ -281,11 +282,13 @@ export const FormUsage: Story = {
 };
 
 // Accessibility example
+
+
 export const Accessibility: Story = {
   args: {
-    label: "hiii"
+    label: "Checkbox with keyboard navigation"
   },
-
+  
   render: () => (
     <div>
       <h3>Keyboard Navigation</h3>
@@ -293,25 +296,35 @@ export const Accessibility: Story = {
         <li>Tab: Focus the checkbox</li>
         <li>Space: Toggle the checkbox state</li>
       </ul>
-      <div style={{ marginTop: '20px' }}>
-        <Checkbox 
-          label="Try focusing this checkbox with Tab key and pressing Space to toggle" 
+      <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <Checkbox
+          label="Try focusing this checkbox with Tab key and pressing Space to toggle"
           id="accessible-checkbox"
+        />
+        <Checkbox
+          label="This is another checkbox you can navigate to with Tab"
+          id="accessible-checkbox-2"
+        />
+        <Checkbox
+          label="This checkbox is disabled and should be skipped during Tab navigation"
+          id="accessible-checkbox-3"
+          disabled
         />
       </div>
     </div>
   ),
-
+  
   parameters: {
     docs: {
       description: {
-        story: `
-### Accessibility Features
-- **Keyboard Navigation**: Users can navigate to checkboxes using the Tab key and toggle them using the Space bar
-- **ARIA Support**: Uses aria-invalid for error states and appropriate role attributes
-- **Focus Management**: Visual focus indicators help keyboard users identify which element is currently focused
-- **Screen Reader Support**: Compatible with screen readers through proper HTML semantics and ARIA attributes
-`,
+        story: ` 
+          ### Accessibility Features 
+          - **Keyboard Navigation**: Users can navigate to checkboxes using the Tab key and toggle them using the Space bar 
+          - **ARIA Support**: Uses aria-checked for state, aria-invalid for error states, and aria-disabled for disabled states
+          - **Focus Management**: Visual focus indicators help keyboard users identify which element is currently focused 
+          - **Screen Reader Support**: Compatible with screen readers through proper HTML semantics and ARIA attributes
+          - **Semantic HTML**: Uses proper label association and keyboard events for native behavior
+        `,
       },
     },
   }

@@ -1,4 +1,4 @@
-import React, { forwardRef, useRef, useEffect } from 'react';
+import React, { forwardRef, useRef, useEffect, KeyboardEvent } from 'react';
 import styled, { css } from 'styled-components';
 import { CheckboxProps } from './Checkbox.types';
 import { useTheme } from '../../themes/ThemeProvider';
@@ -29,6 +29,11 @@ const CheckboxContainer = styled.div<{ disabled?: boolean }>`
   position: relative;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   opacity: ${props => props.disabled ? 0.5 : 1};
+
+  /* Add tabindex styling for keyboard focus */
+  &:focus-within {
+    outline: none;
+  }
 `;
 
 const HiddenCheckbox = styled.input.attrs({ type: 'checkbox' })`
@@ -36,6 +41,11 @@ const HiddenCheckbox = styled.input.attrs({ type: 'checkbox' })`
   opacity: 0;
   width: 0;
   height: 0;
+  
+  /* Ensure the hidden checkbox can receive focus for screen readers */
+  &:focus {
+    outline: none;
+  }
 `;
 
 const StyledCheckbox = styled.div<{
@@ -44,7 +54,7 @@ const StyledCheckbox = styled.div<{
   error?: boolean;
   size?: 'small' | 'medium' | 'large';
   isFocused?: boolean;
-  theme: Theme; // Add theme type here
+  theme: Theme;
 }>`
   display: flex;
   align-items: center;
@@ -98,7 +108,7 @@ const StyledCheckbox = styled.div<{
 
 const CheckIcon = styled.svg<{ 
   size?: 'small' | 'medium' | 'large';
-  theme: Theme; // Add theme type here
+  theme: Theme;
 }>`
   fill: none;
   stroke: ${({ theme }) => theme.colors.background.primary};
@@ -121,7 +131,7 @@ const CheckIcon = styled.svg<{
 
 const Label = styled.span<{ 
   size?: 'small' | 'medium' | 'large';
-  theme: Theme; // Add theme type here
+  theme: Theme;
 }>`
   font-size: ${props => {
     switch (props.size) {
@@ -149,6 +159,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({
   const { theme } = useTheme();
   const internalRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = React.useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // Handle indeterminate state
   useEffect(() => {
@@ -176,19 +187,59 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({
     }
   };
 
+  // Handle space key press when container is focused
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (disabled) return;
+    
+    // Toggle on Space key press
+    if (event.key === ' ' || event.code === 'Space') {
+      event.preventDefault(); // Prevent page scrolling
+      if (internalRef.current) {
+        const newChecked = !checked;
+        
+        // Create and dispatch a synthetic change event
+        const syntheticEvent = new Event('change', { bubbles: true });
+        
+        // Update the checked property of the hidden input
+        internalRef.current.checked = newChecked;
+        
+        // Dispatch the event
+        internalRef.current.dispatchEvent(syntheticEvent);
+        
+        // Call onChange handler with a synthetic React event
+        if (onChange) {
+          onChange({
+            target: { ...internalRef.current, checked: newChecked },
+            currentTarget: internalRef.current,
+          } as React.ChangeEvent<HTMLInputElement>);
+        }
+      }
+    }
+  };
+
+  // Generate a unique ID if none provided
+  const uniqueId = id || `checkbox-${Math.random().toString(36).substring(2, 9)}`;
+
   return (
     <CheckboxContainer 
       className={className} 
-      disabled={disabled} 
+      disabled={disabled}
+      ref={containerRef}
       onClick={() => {
         if (!disabled && internalRef.current) {
+          internalRef.current.focus();
           internalRef.current.click();
         }
       }}
+      onKeyDown={handleKeyDown}
+      tabIndex={disabled ? -1 : 0} // Make container focusable via keyboard
+      role="checkbox" // Ensure proper role for accessibility
+      aria-checked={indeterminate ? 'mixed' : checked}
+      aria-disabled={disabled ? 'true' : 'false'}
       data-testid="checkbox-container"
     >
       <HiddenCheckbox
-        id={id}
+        id={uniqueId}
         ref={checkboxRef}
         checked={checked}
         disabled={disabled}
@@ -233,14 +284,16 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(({
       </StyledCheckbox>
       
       {label && (
-        <Label 
-          size={size}
-          theme={theme as Theme}
-          data-testid="checkbox-label"
-        >
-          {label}
-        </Label>
-      )}
+      <Label 
+        size={size}
+        theme={theme as Theme}
+        data-testid="checkbox-label"
+        as="label" 
+        htmlFor={uniqueId} // Now htmlFor works because we're using "as" to render as label
+      >
+        {label}
+      </Label>
+    )}
     </CheckboxContainer>
   );
 });
